@@ -94,3 +94,15 @@ class TestHTTPBasedResourceLoading(unittest.TestCase):
         self.requests_mock.get.side_effect = Exception("Connection error.")
         with self.assertRaisesRegexp(ResourceLoadingError, 'foo\.bar\.baz'):
             get_paramfile('https://foo.bar.baz')
+
+
+class TestS3BasedResourceLoading(unittest.TestCase):
+    def setUp(self):
+        pass
+
+    def tearDown(self):
+        pass
+
+    def test_wrong_s3uri_raises_error(self):
+        with self.assertRaisesRegexp(ResourceLoadingError, 'foo\.bar\.baz'):
+            get_paramfile('s3://foo.bar.baz')

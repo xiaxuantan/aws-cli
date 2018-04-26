@@ -13,10 +13,13 @@
 import logging
 import os
 
+import botocore.session
 from botocore.vendored import requests
+from awscli import EnvironmentVariables
 from awscli.compat import six
 
 from awscli.compat import compat_open
+from awscli.customizations.s3.utils import find_bucket_key
 
 
 logger = logging.getLogger(__name__)
@@ -177,9 +180,25 @@ def get_uri(prefix, uri):
         raise ResourceLoadingError('Unable to retrieve %s: %s' % (uri, e))
 
 
+def get_s3file(prefix, uri):
+    try:
+        session = botocore.session.get_session(EnvironmentVariables)
+        client = session.create_client('s3')
+        uri = uri[len(prefix):]
+        bucket, key = find_bucket_key(uri)
+        if bucket and key:
+            obj = client.get_object(Bucket=bucket, Key=key)
+            return obj['Body'].read().decode(errors='ignore')
+        raise ResourceLoadingError('both bucket and key are required')
+    except Exception as e:
+        raise ResourceLoadingError('Unable to retrieve %s: %s' % (
+            uri, e))
+
+
 PREFIX_MAP = {
     'file://': (get_file, {'mode': 'r'}),
     'fileb://': (get_file, {'mode': 'rb'}),
     'http://': (get_uri, {}),
     'https://': (get_uri, {}),
+    's3://': (get_s3file, {})
 }
